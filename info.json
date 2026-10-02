@@ -1,0 +1,10 @@
+{
+  "name": "quest-book",
+  "version": "0.1.0",
+  "title": "Quest Book",
+  "author": "Maksym Prymierov",
+  "contact": "primerovmax@gmail.com",
+  "factorio_version": "2.0",
+  "dependencies": ["base >= 2.0.0", "? space-age"],
+  "description": "An in-game story quest book that guides you from the crash landing to the edge of the solar system. Supports vanilla and Space Age; quests for missing content are skipped automatically."
+}

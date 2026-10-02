@@ -1,0 +1,5 @@
+Version: 0.1.0
+Date: 2026-10-02
+  Features:
+    - Initial release: 37 story quests from crash landing to the solar system edge.
+    - Ukranian and English locales.
