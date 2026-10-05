@@ -190,6 +190,50 @@ local function objective_caption(obj)
   end
 end
 
+-- What clicking an objective opens: the technology tree for research,
+-- Factoriopedia for everything else. Returns nil if there is nothing to show.
+local function objective_help(obj)
+  local t = obj.type
+  if t == "research" then
+    return "technology", prototypes.technology[obj.tech]
+  end
+  local proto
+  if t == "produce" then
+    proto = obj.fluid and prototypes.fluid[obj.fluid] or prototypes.item[obj.item]
+    -- rocket parts have no Factoriopedia page of their own; they are made in the silo
+    if obj.item == "rocket-part" then proto = prototypes.entity["rocket-silo"] end
+  elseif t == "build" then
+    proto = prototypes.entity[obj.entity]
+  elseif t == "rocket" then
+    proto = prototypes.entity["rocket-silo"]
+  elseif t == "visit" then
+    proto = prototypes.space_location[obj.planet]
+  elseif t == "reach" then
+    proto = prototypes.space_location[obj.location]
+  end
+  if proto and not proto.hidden_in_factoriopedia then return "factoriopedia", proto end
+end
+
+-- Adds an objective label that opens its help page on click, when it has one.
+local function add_objective_label(parent, quest, index, caption)
+  local kind = objective_help(quest.objectives[index])
+  if not kind then return parent.add { type = "label", caption = caption } end
+  return parent.add {
+    type = "label", caption = caption, style = "clickable_label",
+    tooltip = { "quest-book.help-" .. kind },
+    tags = { qb_action = "help", quest = quest.id, objective = index },
+  }
+end
+
+local function open_objective_help(player, obj)
+  local kind, proto = objective_help(obj)
+  if kind == "technology" then
+    player.open_technology_gui(proto)
+  elseif kind == "factoriopedia" then
+    player.open_factoriopedia_gui(proto)
+  end
+end
+
 local STATUS_ICON = {
   done = "[img=utility/check_mark_green]",
   active = "[img=utility/status_yellow]",
@@ -241,7 +285,7 @@ local function update_tracker(player)
       if target > 1 and not done then
         caption[#caption + 1] = "  " .. current .. "/" .. target
       end
-      local label = frame.add { type = "label", caption = caption }
+      local label = add_objective_label(frame, quest, index, caption)
       label.style.single_line = false
       label.style.maximal_width = 320
       if done then label.style.font_color = { 0.6, 0.6, 0.6 } end
@@ -360,7 +404,7 @@ local function build_details(parent, player, fs, quest)
     local icon = row.add { type = "sprite" }
     icon.style.size = 16
     icon.style.stretch_image_to_widget_size = true
-    local label = row.add { type = "label", caption = objective_caption(obj) }
+    local label = add_objective_label(row, quest, index, objective_caption(obj))
     label.style.width = 300
     label.style.single_line = false
     local bar
@@ -662,6 +706,10 @@ script.on_event(defines.events.on_gui_click, function(e)
   elseif action == "select" then
     player_state(player).selected = element.tags.quest
     build_window(player)
+  elseif action == "help" then
+    local quest = quest_by_id[element.tags.quest]
+    local obj = quest and quest.objectives[element.tags.objective]
+    if obj then open_objective_help(player, obj) end
   elseif action == "claim" then
     claim(player, quest_by_id[element.tags.quest])
     build_window(player)
