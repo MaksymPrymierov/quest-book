@@ -131,6 +131,19 @@ local function quest_totals(fs)
   return completed, total
 end
 
+-- Tick at which the last quest of the chapter was completed, or nil while it is unfinished.
+local function chapter_completed_tick(fs, chapter)
+  local last
+  for _, quest in ipairs(defs.quests) do
+    if quest.chapter == chapter.id and storage.valid[quest.id] then
+      local tick = fs.completed[quest.id]
+      if not tick then return nil end
+      if not last or tick > last then last = tick end
+    end
+  end
+  return last
+end
+
 ---------------------------------------------------------------------------
 -- Objective progress
 ---------------------------------------------------------------------------
@@ -246,6 +259,12 @@ local function open_objective_help(player, obj)
   end
 end
 
+-- Game time as h:mm:ss
+local function format_time(tick)
+  local seconds = math.floor(tick / 60)
+  return string.format("%d:%02d:%02d", math.floor(seconds / 3600), math.floor(seconds / 60) % 60, seconds % 60)
+end
+
 local STATUS_ICON = {
   done = "[img=utility/check_mark_green]",
   active = "[img=utility/status_yellow]",
@@ -334,7 +353,15 @@ local function build_quest_list(parent, player, fs, selected)
       if quest.chapter == chapter.id and storage.valid[quest.id] then visible[#visible + 1] = quest end
     end
     if #visible > 0 then
-      local header = scroll.add { type = "label", caption = { "", "[img=" .. chapter.icon .. "] ", { "quest-book-chapter." .. chapter.id } } }
+      local header_caption = { "", "[img=" .. chapter.icon .. "] ", { "quest-book-chapter." .. chapter.id } }
+      local header_tooltip
+      local finished = chapter_completed_tick(fs, chapter)
+      if finished then
+        local time = format_time(finished)
+        header_caption[#header_caption + 1] = "  [font=default][color=0.6,0.6,0.6]" .. time .. "[/color][/font]"
+        header_tooltip = { "quest-book.chapter-completed-at", time }
+      end
+      local header = scroll.add { type = "label", caption = header_caption, tooltip = header_tooltip }
       header.style.font = "heading-2"
       header.style.top_margin = 6
       for _, quest in ipairs(visible) do
@@ -462,6 +489,7 @@ local function build_details(parent, player, fs, quest)
     local done = scroll.add { type = "label", caption = { "quest-book.quest-done" } }
     done.style.top_margin = 10
     done.style.font_color = { 0.4, 0.9, 0.4 }
+    scroll.add { type = "label", caption = { "quest-book.completed-at", format_time(fs.completed[quest.id]) } }.style.font_color = { 0.7, 0.7, 0.7 }
   end
 end
 
@@ -519,7 +547,12 @@ local function build_window(player)
   build_details(body, player, fs, quest)
 
   if all_done(fs) then
-    local finale = window.add { type = "label", caption = { "quest-book.finale-banner" } }
+    local caption = { "", { "quest-book.finale-banner" } }
+    if fs.finished then
+      caption[#caption + 1] = "  "
+      caption[#caption + 1] = { "quest-book.finale-time", format_time(fs.finished) }
+    end
+    local finale = window.add { type = "label", caption = caption }
     finale.style.font = "default-bold"
     finale.style.font_color = { 0.4, 0.9, 0.4 }
   end
