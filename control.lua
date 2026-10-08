@@ -119,6 +119,18 @@ local function all_done(fs)
   return true
 end
 
+-- Returns completed, total; skipped quests are not counted.
+local function quest_totals(fs)
+  local completed, total = 0, 0
+  for _, quest in ipairs(defs.quests) do
+    if storage.valid[quest.id] then
+      total = total + 1
+      if fs.completed[quest.id] then completed = completed + 1 end
+    end
+  end
+  return completed, total
+end
+
 ---------------------------------------------------------------------------
 -- Objective progress
 ---------------------------------------------------------------------------
@@ -460,6 +472,20 @@ local function build_window(player)
   titlebar.drag_target = window
   titlebar.style.horizontal_spacing = 8
   titlebar.add { type = "label", caption = { "quest-book.window-title" }, style = "frame_title", ignored_by_interaction = true }
+  -- overall progress; the window is rebuilt whenever a quest completes, so this stays current
+  local completed, total = quest_totals(fs)
+  local overall = titlebar.add {
+    type = "progressbar", value = total > 0 and completed / total or 0,
+    tooltip = { "quest-book.overall-progress" },
+  }
+  overall.style.width = 120
+  overall.style.top_margin = 8
+  overall.style.color = { 0.3, 0.8, 0.3 }
+  local counter = titlebar.add {
+    type = "label", caption = completed .. " / " .. total,
+    tooltip = { "quest-book.overall-progress" },
+  }
+  counter.style.font = "default-bold"
   local drag = titlebar.add { type = "empty-widget", style = "draggable_space_header", ignored_by_interaction = true }
   drag.style.horizontally_stretchable = true
   drag.style.height = 24
