@@ -339,9 +339,22 @@ local function build_quest_list(parent, player, fs, selected)
       header.style.top_margin = 6
       for _, quest in ipairs(visible) do
         local status = quest_status(fs, quest)
-        local caption
+        local caption, tooltip
         if status == "locked" then
-          caption = { "", STATUS_ICON.locked, " ", { "quest-book.locked-title" } }
+          -- name what still has to be done: the first prerequisite in the caption, all of them in the tooltip
+          local missing = {}
+          for _, req in ipairs(quest.requires) do
+            if not is_done(fs, req) then missing[#missing + 1] = { "quest-book-title." .. req } end
+          end
+          local hint = #missing > 1 and { "quest-book.locked-after-more", missing[1], #missing - 1 }
+            or { "quest-book.locked-after", missing[1] }
+          caption = { "", STATUS_ICON.locked, " ", hint }
+          local list = { "" }
+          for i, title in ipairs(missing) do
+            if i > 1 then list[#list + 1] = ", " end
+            list[#list + 1] = title
+          end
+          tooltip = { "quest-book.locked-tooltip", list }
         else
           caption = { "", STATUS_ICON[status], " ", { "quest-book-title." .. quest.id } }
         end
@@ -352,6 +365,7 @@ local function build_quest_list(parent, player, fs, selected)
         local button = scroll.add {
           type = "button",
           caption = caption,
+          tooltip = tooltip,
           style = quest.id == selected and "qb_quest_button_selected" or "qb_quest_button",
           tags = { qb_action = "select", quest = quest.id },
           enabled = status ~= "locked",
