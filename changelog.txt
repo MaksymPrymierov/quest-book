@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.5
+Date: 2026-10-10
+  Features:
+    - Mod settings: number of quests on the objectives panel, quest messages in chat, quest rewards on/off.
+  Changes:
+    - Early build objectives now count any building of the same type (higher tiers, modded replacements).
+  Locale:
+    - Added German translation (thanks to Yokmp and Eddy_Karacho).
+---------------------------------------------------------------------------------------------------
 Version: 0.2.4
 Date: 2026-10-08
   Features:
