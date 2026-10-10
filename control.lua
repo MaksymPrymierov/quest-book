@@ -5,7 +5,6 @@ local BUTTON = "qb_open_button"
 local WINDOW = "qb_window"
 local TRACKER = "qb_tracker"
 local CHECK_INTERVAL = 60
-local TRACKER_LIMIT = 3
 
 -- Static lookup tables built from the definitions
 local quest_by_id = {}
@@ -108,6 +107,27 @@ local function player_state(player)
     storage.players[player.index] = s
   end
   return s
+end
+
+---------------------------------------------------------------------------
+-- Mod settings
+---------------------------------------------------------------------------
+
+local function tracker_limit(player)
+  return player.mod_settings["qb-tracker-limit"].value
+end
+
+local function rewards_enabled()
+  return settings.global["qb-rewards"].value
+end
+
+-- Chat messages are a per-player setting, so they cannot go through force.print.
+local function announce(force, message, color)
+  for _, player in pairs(force.connected_players) do
+    if player.mod_settings["qb-chat-messages"].value then
+      player.print(message, { color = color })
+    end
+  end
 end
 
 -- A skipped (invalid) quest counts as done for its dependants.
@@ -331,7 +351,8 @@ local function update_tracker(player)
     frame.style.maximal_width = 340
   end
 
-  for i = 1, math.min(#list, TRACKER_LIMIT) do
+  local limit = tracker_limit(player)
+  for i = 1, math.min(#list, limit) do
     local quest = list[i]
     local title = frame.add {
       type = "label",
@@ -354,8 +375,8 @@ local function update_tracker(player)
       if done then label.style.font_color = { 0.6, 0.6, 0.6 } end
     end
   end
-  if #list > TRACKER_LIMIT then
-    frame.add { type = "label", caption = { "quest-book.tracker-more", #list - TRACKER_LIMIT } }.style.font_color = { 0.7, 0.7, 0.7 }
+  if #list > limit then
+    frame.add { type = "label", caption = { "quest-book.tracker-more", #list - limit } }.style.font_color = { 0.7, 0.7, 0.7 }
   end
 end
 
@@ -418,7 +439,7 @@ local function build_quest_list(parent, player, fs, selected)
           caption = { "", STATUS_ICON[status], " ", { "quest-book-title." .. quest.id } }
         end
         local ps = player_state(player)
-        if status == "done" and quest.rewards and not ps.claimed[quest.id] then
+        if status == "done" and quest.rewards and rewards_enabled() and not ps.claimed[quest.id] then
           caption[#caption + 1] = " [img=utility/notification]"
         end
         local button = scroll.add {
@@ -501,7 +522,7 @@ local function build_details(parent, player, fs, quest)
   end
   update_window_progress(player)
 
-  if quest.rewards then
+  if quest.rewards and rewards_enabled() then
     scroll.add { type = "line" }.style.top_margin = 8
     scroll.add { type = "label", caption = { "quest-book.rewards" }, style = "caption_label" }
     local row = scroll.add { type = "flow", direction = "horizontal" }
@@ -633,7 +654,7 @@ local function announce_unlocks(force, fs, silent)
     if not fs.announced[quest.id] then
       fs.announced[quest.id] = true
       if not silent then
-        force.print({ "quest-book.quest-unlocked", { "quest-book-title." .. quest.id } }, { color = { 1, 0.85, 0.5 } })
+        announce(force, { "quest-book.quest-unlocked", { "quest-book-title." .. quest.id } }, { 1, 0.85, 0.5 })
       end
     end
   end
@@ -642,8 +663,8 @@ end
 local function complete_quest(force, fs, quest)
   fs.completed[quest.id] = game.tick
   fs.objectives[quest.id] = nil
-  force.print({ "quest-book.quest-completed", { "quest-book-title." .. quest.id } }, { color = { 0.4, 0.9, 0.4 } })
-  if quest.rewards then force.print({ "quest-book.reward-available" }) end
+  announce(force, { "quest-book.quest-completed", { "quest-book-title." .. quest.id } }, { 0.4, 0.9, 0.4 })
+  if quest.rewards and rewards_enabled() then announce(force, { "quest-book.reward-available" }) end
   force.play_sound { path = "utility/achievement_unlocked" }
 end
 
@@ -675,7 +696,7 @@ local function check_force(force)
     announce_unlocks(force, fs, false)
     if all_done(fs) and not fs.finished then
       fs.finished = game.tick
-      force.print({ "quest-book.finale" }, { color = { 0.6, 0.9, 1 } })
+      announce(force, { "quest-book.finale" }, { 0.6, 0.9, 1 })
       force.play_sound { path = "utility/game_won" }
     end
   end
@@ -745,7 +766,9 @@ end)
 script.on_event(defines.events.on_player_created, function(e)
   local player = game.get_player(e.player_index)
   init_player(player)
-  player.print({ "quest-book.welcome" }, { color = { 1, 0.85, 0.5 } })
+  if player.mod_settings["qb-chat-messages"].value then
+    player.print({ "quest-book.welcome" }, { color = { 1, 0.85, 0.5 } })
+  end
 end)
 
 script.on_event(defines.events.on_player_changed_force, function(e)
@@ -765,6 +788,14 @@ script.on_event(defines.events.on_research_finished, function(e)
   if check_force(force) then refresh_force(force) end
 end)
 
+script.on_event(defines.events.on_runtime_mod_setting_changed, function(e)
+  if e.setting == "qb-rewards" then
+    for _, player in pairs(game.connected_players) do refresh_player(player) end
+  elseif e.setting == "qb-tracker-limit" and e.player_index then
+    update_tracker(game.get_player(e.player_index))
+  end
+end)
+
 script.on_nth_tick(CHECK_INTERVAL, tick)
 
 script.on_event("qb-toggle", function(e)
@@ -782,7 +813,7 @@ end)
 local function claim(player, quest)
   local ps = player_state(player)
   local fs = force_state(player.force)
-  if ps.claimed[quest.id] or not fs.completed[quest.id] then return end
+  if not rewards_enabled() or ps.claimed[quest.id] or not fs.completed[quest.id] then return end
   ps.claimed[quest.id] = true
   for _, reward in ipairs(quest.rewards) do
     local inserted = player.insert { name = reward.name, count = reward.count }
