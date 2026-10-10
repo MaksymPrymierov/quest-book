@@ -26,6 +26,30 @@ end
 -- Prototype validity
 ---------------------------------------------------------------------------
 
+-- Names of all entity prototypes a `kind` build objective counts, cached per kind.
+-- Prototypes cannot change while a save is loaded, so the cache needs no invalidation.
+local kind_cache = {}
+local function kind_names(obj)
+  local names = kind_cache[obj.kind]
+  if not names then
+    names = {}
+    for _, type in ipairs(obj.types or { obj.kind }) do
+      for name in pairs(prototypes.get_entity_filtered { { filter = "type", type = type } }) do
+        names[#names + 1] = name
+      end
+    end
+    table.sort(names)
+    kind_cache[obj.kind] = names
+  end
+  return names
+end
+
+-- The entity whose icon and help page represent a build objective.
+local function build_entity(obj)
+  if not obj.kind or prototypes.entity[obj.entity] then return obj.entity end
+  return kind_names(obj)[1]
+end
+
 local function objective_valid(obj)
   local t = obj.type
   if t == "produce" then
@@ -34,6 +58,7 @@ local function objective_valid(obj)
   elseif t == "research" then
     return prototypes.technology[obj.tech] ~= nil
   elseif t == "build" then
+    if obj.kind then return #kind_names(obj) > 0 end
     return prototypes.entity[obj.entity] ~= nil
   elseif t == "rocket" then
     return true
@@ -167,6 +192,11 @@ local function objective_progress(force, fs, obj)
     local tech = force.technologies[obj.tech]
     return (tech and tech.researched) and 1 or 0, 1
   elseif t == "build" then
+    if obj.kind then
+      local total = 0
+      for _, name in ipairs(kind_names(obj)) do total = total + force.get_entity_count(name) end
+      return total, obj.count
+    end
     return force.get_entity_count(obj.entity), obj.count
   elseif t == "rocket" then
     return force.rockets_launched, obj.count
@@ -205,7 +235,9 @@ local function objective_caption(obj)
   elseif t == "research" then
     return { "quest-book.obj-research", "[technology=" .. obj.tech .. "]", prototypes.technology[obj.tech].localised_name }
   elseif t == "build" then
-    return { "quest-book.obj-build", "[entity=" .. obj.entity .. "]", prototypes.entity[obj.entity].localised_name }
+    local entity = build_entity(obj)
+    return { "quest-book.obj-build", "[entity=" .. entity .. "]",
+      obj.kind and { "quest-book-kind." .. obj.kind } or prototypes.entity[entity].localised_name }
   elseif t == "rocket" then
     return { "quest-book.obj-rocket" }
   elseif t == "visit" then
@@ -228,7 +260,7 @@ local function objective_help(obj)
     -- rocket parts have no Factoriopedia page of their own; they are made in the silo
     if obj.item == "rocket-part" then proto = prototypes.entity["rocket-silo"] end
   elseif t == "build" then
-    proto = prototypes.entity[obj.entity]
+    proto = prototypes.entity[build_entity(obj)]
   elseif t == "rocket" then
     proto = prototypes.entity["rocket-silo"]
   elseif t == "visit" then
