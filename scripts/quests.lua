@@ -9,6 +9,10 @@
 --   produce  {item=, count=} or {fluid=, count=}  total produced by the force (all surfaces)
 --   research {tech=}
 --   build    {entity=, count=}                    entities currently owned by the force
+--            {entity=, kind=, count=}             any entity of prototype type `kind` counts (higher tiers,
+--                                                 modded replacements); `entity` only provides the icon and
+--                                                 help page. `types = {...}` overrides the prototype types;
+--                                                 the name shown is [quest-book-kind] <kind> in the locale.
 --   rocket   {count=}                             rockets launched by the force
 --   visit    {planet=}                            a player of the force stood on the planet
 --   reach    {location=}                          a platform of the force reached the space location
@@ -44,34 +48,34 @@ local quests = {
     } },
   { id = "drills", chapter = "landing",
     objectives = {
-      { type = "build", entity = "burner-mining-drill", count = 6 },
-      { type = "build", entity = "stone-furnace", count = 6 },
+      { type = "build", entity = "burner-mining-drill", kind = "mining-drill", count = 6 },
+      { type = "build", entity = "stone-furnace", kind = "furnace", count = 6 },
     },
     rewards = { { name = "wood", count = 50 } } },
   { id = "power", chapter = "landing",
     objectives = {
-      { type = "build", entity = "offshore-pump", count = 1 },
-      { type = "build", entity = "boiler", count = 1 },
-      { type = "build", entity = "steam-engine", count = 2 },
+      { type = "build", entity = "offshore-pump", kind = "offshore-pump", count = 1 },
+      { type = "build", entity = "boiler", kind = "boiler", count = 1 },
+      { type = "build", entity = "steam-engine", kind = "generator", count = 2 },
     },
     rewards = { { name = "small-electric-pole", count = 20 } } },
   { id = "lab", chapter = "landing",
     objectives = {
-      { type = "build", entity = "lab", count = 1 },
+      { type = "build", entity = "lab", kind = "lab", count = 1 },
       { type = "research", tech = "automation" },
     } },
 
   -- Chapter 2: automation
   { id = "red-science", chapter = "automation",
     objectives = {
-      { type = "build", entity = "assembling-machine-1", count = 5 },
+      { type = "build", entity = "assembling-machine-1", kind = "assembling-machine", count = 5 },
       { type = "produce", item = "automation-science-pack", count = 100 },
     },
     rewards = { { name = "assembling-machine-1", count = 5 } } },
   { id = "belts", chapter = "automation",
     objectives = {
       { type = "research", tech = "logistics" },
-      { type = "build", entity = "electric-mining-drill", count = 10 },
+      { type = "build", entity = "electric-mining-drill", kind = "mining-drill", count = 10 },
       { type = "produce", item = "transport-belt", count = 300 },
     },
     rewards = { { name = "inserter", count = 20 } } },
@@ -86,14 +90,14 @@ local quests = {
   { id = "turrets", chapter = "defense", requires = { "red-science" },
     objectives = {
       { type = "research", tech = "gun-turret" },
-      { type = "build", entity = "gun-turret", count = 6 },
+      { type = "build", entity = "gun-turret", kind = "turret", types = { "ammo-turret", "electric-turret", "fluid-turret" }, count = 6 },
       { type = "produce", item = "firearm-magazine", count = 200 },
     },
     rewards = { { name = "firearm-magazine", count = 100 } } },
   { id = "walls", chapter = "defense",
     objectives = {
       { type = "research", tech = "stone-wall" },
-      { type = "build", entity = "stone-wall", count = 100 },
+      { type = "build", entity = "stone-wall", kind = "wall", count = 100 },
       { type = "research", tech = "military-2" },
     },
     rewards = { { name = "piercing-rounds-magazine", count = 100 } } },
@@ -134,8 +138,8 @@ local quests = {
   { id = "solar", chapter = "networks", requires = { "blue-science" },
     objectives = {
       { type = "research", tech = "solar-energy" },
-      { type = "build", entity = "solar-panel", count = 50 },
-      { type = "build", entity = "accumulator", count = 30 },
+      { type = "build", entity = "solar-panel", kind = "solar-panel", count = 50 },
+      { type = "build", entity = "accumulator", kind = "accumulator", count = 30 },
     } },
   { id = "robots", chapter = "networks", requires = { "blue-science" },
     objectives = {
