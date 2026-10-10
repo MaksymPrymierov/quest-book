@@ -13,7 +13,7 @@ An in-game story journal for Factorio 2.0. Not sure what to do next? 37 story qu
 - **Small rewards** for some quests, claimed by each player individually.
 - **Vanilla and Space Age.** Quests that need content you don't have are skipped automatically.
 - **Multiplayer:** progress is shared per force.
-- **Languages:** English, Ukrainian.
+- **Languages:** English, Ukrainian, German.
 
 ![Objective tracker](docs/screenshots/tracker.png)
 
@@ -66,6 +66,12 @@ Supported objective types: `produce`, `research`, `build`, `rocket`, `visit`, `r
 
 Bug reports and ideas are welcome in Issues or in the mod portal discussion.
 
+## Credits
+
+Thanks to everyone who translated the mod:
+
+- **German:** [Yokmp](https://github.com/Yokmp) and Eddy_Karacho
+
 ## License
 
 MIT
@@ -85,7 +91,7 @@ MIT
 - **Невеликі нагороди** за деякі квести. Кожен гравець забирає свою.
 - **Ваніль і Space Age.** Квести, для яких немає потрібного контенту, пропускаються автоматично.
 - **Мультиплеєр:** прогрес спільний для всієї команди (force).
-- **Мови:** українська, англійська.
+- **Мови:** українська, англійська, німецька.
 
 ![Панель завдань](docs/screenshots/tracker-uk.png)
 
@@ -123,6 +129,12 @@ MIT
 - **Не перейменовувати `id` квестів** у вже опублікованій версії, бо прогрес гравців зберігається за id.
 
 Про баги та ідеї пишіть в Issues або в обговоренні на порталі модів.
+
+## Подяки
+
+Дякую всім, хто переклав мод:
+
+- **Німецька:** [Yokmp](https://github.com/Yokmp) та Eddy_Karacho
 
 ## Ліцензія
 
