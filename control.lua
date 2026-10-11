@@ -43,6 +43,35 @@ local function kind_names(obj)
   return names
 end
 
+-- Some mods swap placed buildings for internal copies under another name (seasonal or
+-- powered variants, for example). A copy has the same prototype type and is placed by
+-- the same item, so those are counted together with the original. Cached per entity.
+local variant_cache = {}
+local function variant_names(entity)
+  local names = variant_cache[entity]
+  if not names then
+    names = { entity }
+    local proto = prototypes.entity[entity]
+    local items = {}
+    for _, item in pairs(proto.items_to_place_this or {}) do items[item.name] = true end
+    if next(items) then
+      for name, other in pairs(prototypes.get_entity_filtered { { filter = "type", type = proto.type } }) do
+        if name ~= entity then
+          for _, item in pairs(other.items_to_place_this or {}) do
+            if items[item.name] then
+              names[#names + 1] = name
+              break
+            end
+          end
+        end
+      end
+      table.sort(names)
+    end
+    variant_cache[entity] = names
+  end
+  return names
+end
+
 -- The entity whose icon and help page represent a build objective.
 local function build_entity(obj)
   if not obj.kind or prototypes.entity[obj.entity] then return obj.entity end
@@ -217,7 +246,9 @@ local function objective_progress(force, fs, obj)
       for _, name in ipairs(kind_names(obj)) do total = total + force.get_entity_count(name) end
       return total, obj.count
     end
-    return force.get_entity_count(obj.entity), obj.count
+    local total = 0
+    for _, name in ipairs(variant_names(obj.entity)) do total = total + force.get_entity_count(name) end
+    return total, obj.count
   elseif t == "rocket" then
     return force.rockets_launched, obj.count
   elseif t == "visit" then
