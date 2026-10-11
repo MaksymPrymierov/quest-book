@@ -382,9 +382,19 @@ local function update_tracker(player)
     frame.style.maximal_width = 340
   end
 
+  -- Pinned quests always come first; the remaining slots go to the other active quests.
   local limit = tracker_limit(player)
-  for i = 1, math.min(#list, limit) do
-    local quest = list[i]
+  local pinned = ps.pinned or {}
+  local shown = {}
+  for _, quest in ipairs(list) do
+    if pinned[quest.id] then shown[#shown + 1] = quest end
+  end
+  for _, quest in ipairs(list) do
+    if #shown >= limit then break end
+    if not pinned[quest.id] then shown[#shown + 1] = quest end
+  end
+
+  for _, quest in ipairs(shown) do
     local title = frame.add {
       type = "label",
       caption = { "", "[img=" .. chapter_by_id[quest.chapter].icon .. "] ", { "quest-book-title." .. quest.id } },
@@ -406,8 +416,8 @@ local function update_tracker(player)
       if done then label.style.font_color = { 0.6, 0.6, 0.6 } end
     end
   end
-  if #list > limit then
-    frame.add { type = "label", caption = { "quest-book.tracker-more", #list - limit } }.style.font_color = { 0.7, 0.7, 0.7 }
+  if #list > #shown then
+    frame.add { type = "label", caption = { "quest-book.tracker-more", #list - #shown } }.style.font_color = { 0.7, 0.7, 0.7 }
   end
 end
 
@@ -520,6 +530,13 @@ local function build_details(parent, player, fs, quest)
   scroll.add { type = "label", caption = { "", "[img=" .. chapter.icon .. "] ", { "quest-book-chapter." .. chapter.id } } }.style.font_color = { 0.7, 0.7, 0.7 }
   local title = scroll.add { type = "label", caption = { "quest-book-title." .. quest.id } }
   title.style.font = "heading-1"
+  if status == "active" then
+    scroll.add {
+      type = "checkbox", state = (player_state(player).pinned or {})[quest.id] == true,
+      caption = { "quest-book.pin" }, tooltip = { "quest-book.pin-tooltip" },
+      tags = { qb_action = "pin", quest = quest.id },
+    }
+  end
 
   local story = scroll.add { type = "label", caption = { "quest-book-story." .. quest.id } }
   story.style.single_line = false
@@ -885,9 +902,17 @@ end)
 
 script.on_event(defines.events.on_gui_checked_state_changed, function(e)
   local element = e.element
-  if element.valid and element.tags and element.tags.qb_action == "tracker" then
+  if not (element.valid and element.tags) then return end
+  local action = element.tags.qb_action
+  if action == "tracker" then
     local player = game.get_player(e.player_index)
     player_state(player).tracker = element.state
+    update_tracker(player)
+  elseif action == "pin" then
+    local player = game.get_player(e.player_index)
+    local ps = player_state(player)
+    ps.pinned = ps.pinned or {}
+    ps.pinned[element.tags.quest] = element.state or nil
     update_tracker(player)
   end
 end)
@@ -916,7 +941,10 @@ commands.add_command("qb-reset", { "quest-book.cmd-reset" }, function(cmd)
   local force = player and player.force or game.forces.player
   storage.forces[force.index] = nil
   for _, p in pairs(force.players) do
-    if storage.players[p.index] then storage.players[p.index].claimed = {} end
+    if storage.players[p.index] then
+      storage.players[p.index].claimed = {}
+      storage.players[p.index].pinned = nil
+    end
   end
   announce_unlocks(force, force_state(force), true)
   refresh_force(force)
