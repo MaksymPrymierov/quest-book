@@ -7,6 +7,8 @@
 --
 -- Objective types:
 --   produce  {item=, count=} or {fluid=, count=}  total produced by the force (all surfaces)
+--   rate     {item=, count=} or {fluid=, count=}  produced per minute by the force (all surfaces),
+--                                                 averaged over the last minute
 --   research {tech=}
 --   build    {entity=, count=}                    entities currently owned by the force
 --            {entity=, kind=, count=}             any entity of prototype type `kind` counts (higher tiers,
@@ -72,7 +74,13 @@ local quests = {
       { type = "produce", item = "automation-science-pack", count = 100 },
     },
     rewards = { { name = "assembling-machine-1", count = 5 } } },
-  { id = "belts", chapter = "automation",
+  -- Rate quests are side quests: nothing in the main story requires them.
+  { id = "red-rate", chapter = "automation",
+    objectives = {
+      { type = "rate", item = "automation-science-pack", count = 60 },
+    },
+    rewards = { { name = "transport-belt", count = 100 } } },
+  { id = "belts", chapter = "automation", requires = { "red-science" },
     objectives = {
       { type = "research", tech = "logistics" },
       { type = "build", entity = "electric-mining-drill", kind = "mining-drill", count = 10 },
@@ -85,6 +93,12 @@ local quests = {
       { type = "produce", item = "logistic-science-pack", count = 200 },
     },
     rewards = { { name = "assembling-machine-2", count = 4 } } },
+  { id = "green-rate", chapter = "automation",
+    objectives = {
+      { type = "rate", item = "automation-science-pack", count = 60 },
+      { type = "rate", item = "logistic-science-pack", count = 60 },
+    },
+    rewards = { { name = "fast-inserter", count = 20 } } },
 
   -- Chapter 3: defense (runs in parallel with automation)
   { id = "turrets", chapter = "defense", requires = { "red-science" },
@@ -115,6 +129,12 @@ local quests = {
       { type = "produce", item = "plastic-bar", count = 200 },
       { type = "produce", item = "advanced-circuit", count = 100 },
     } },
+  { id = "circuit-rate", chapter = "oil",
+    objectives = {
+      { type = "rate", item = "electronic-circuit", count = 300 },
+      { type = "rate", item = "advanced-circuit", count = 60 },
+    },
+    rewards = { { name = "assembling-machine-3", count = 4 } } },
   { id = "military-science", chapter = "oil", requires = { "walls", "plastic" },
     objectives = {
       { type = "research", tech = "military-science-pack" },
@@ -161,6 +181,13 @@ local quests = {
       { type = "research", tech = "utility-science-pack" },
       { type = "produce", item = "utility-science-pack", count = 200 },
     } },
+  { id = "science-rate", chapter = "science", requires = { "purple-science", "yellow-science" },
+    objectives = {
+      { type = "rate", item = "chemical-science-pack", count = 60 },
+      { type = "rate", item = "production-science-pack", count = 60 },
+      { type = "rate", item = "utility-science-pack", count = 60 },
+    },
+    rewards = { { name = "productivity-module-2", count = 4 } } },
   { id = "modules", chapter = "science", requires = { "purple-science" },
     objectives = {
       { type = "research", tech = "productivity-module" },
@@ -268,6 +295,13 @@ local quests = {
       { type = "research", tech = "fusion-reactor" },
       { type = "build", entity = "fusion-reactor", count = 1 },
       { type = "build", entity = "fusion-generator", count = 2 },
+    } },
+  { id = "planet-rate", chapter = "aquilo", requires = { "aquilo-science" },
+    objectives = {
+      { type = "rate", item = "metallurgic-science-pack", count = 60 },
+      { type = "rate", item = "electromagnetic-science-pack", count = 60 },
+      { type = "rate", item = "agricultural-science-pack", count = 60 },
+      { type = "rate", item = "cryogenic-science-pack", count = 60 },
     } },
 
   -- Chapter 13: the edge of the system

@@ -80,7 +80,7 @@ end
 
 local function objective_valid(obj)
   local t = obj.type
-  if t == "produce" then
+  if t == "produce" or t == "rate" then
     if obj.fluid then return prototypes.fluid[obj.fluid] ~= nil end
     return prototypes.item[obj.item] ~= nil
   elseif t == "research" then
@@ -232,11 +232,27 @@ local function produced(force, obj)
   return total
 end
 
+-- Production per minute, averaged over the last minute (the number the production window shows).
+local function production_rate(force, obj)
+  local total = 0
+  for _, surface in pairs(game.surfaces) do
+    local stats = obj.fluid and force.get_fluid_production_statistics(surface)
+      or force.get_item_production_statistics(surface)
+    total = total + stats.get_flow_count {
+      name = obj.fluid or obj.item, category = "input",
+      precision_index = defines.flow_precision_index.one_minute,
+    }
+  end
+  return total
+end
+
 -- Returns current, target
 local function objective_progress(force, fs, obj)
   local t = obj.type
   if t == "produce" then
     return math.floor(produced(force, obj)), obj.count
+  elseif t == "rate" then
+    return math.floor(production_rate(force, obj)), obj.count
   elseif t == "research" then
     local tech = force.technologies[obj.tech]
     return (tech and tech.researched) and 1 or 0, 1
@@ -278,11 +294,12 @@ end
 
 local function objective_caption(obj)
   local t = obj.type
-  if t == "produce" then
+  if t == "produce" or t == "rate" then
+    local key = "quest-book.obj-" .. t
     if obj.fluid then
-      return { "quest-book.obj-produce", "[fluid=" .. obj.fluid .. "]", prototypes.fluid[obj.fluid].localised_name }
+      return { key, "[fluid=" .. obj.fluid .. "]", prototypes.fluid[obj.fluid].localised_name }
     end
-    return { "quest-book.obj-produce", "[item=" .. obj.item .. "]", prototypes.item[obj.item].localised_name }
+    return { key, "[item=" .. obj.item .. "]", prototypes.item[obj.item].localised_name }
   elseif t == "research" then
     return { "quest-book.obj-research", "[technology=" .. obj.tech .. "]", prototypes.technology[obj.tech].localised_name }
   elseif t == "build" then
@@ -306,7 +323,7 @@ local function objective_help(obj)
     return "technology", prototypes.technology[obj.tech]
   end
   local proto
-  if t == "produce" then
+  if t == "produce" or t == "rate" then
     proto = obj.fluid and prototypes.fluid[obj.fluid] or prototypes.item[obj.item]
     -- rocket parts have no Factoriopedia page of their own; they are made in the silo
     if obj.item == "rocket-part" then proto = prototypes.entity["rocket-silo"] end
