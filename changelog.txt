@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.6
+Date: 2026-10-11
+  Features:
+    - Pin quests to the objectives panel from the quest details.
+  Bugfixes:
+    - Build objectives now count copies of a building created by other mods (e.g. Winter Is Coming).
+---------------------------------------------------------------------------------------------------
 Version: 0.2.5
 Date: 2026-10-10
   Features:
