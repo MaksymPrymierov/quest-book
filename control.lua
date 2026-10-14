@@ -88,6 +88,16 @@ local function objective_valid(obj)
   elseif t == "build" then
     if obj.kind then return #kind_names(obj) > 0 end
     return prototypes.entity[obj.entity] ~= nil
+  elseif t == "kill" then
+    if obj.kind and #kind_names(obj) == 0 then return false end
+    if not obj.kind and not prototypes.entity[obj.entity] then return false end
+    -- impossible on a map generated without enemies
+    if obj.control then
+      local controls = game.surfaces.nauvis.map_gen_settings.autoplace_controls
+      local control = controls and controls[obj.control]
+      if not control or control.size == 0 then return false end
+    end
+    return true
   elseif t == "rocket" then
     return true
   elseif t == "visit" then
@@ -246,6 +256,16 @@ local function production_rate(force, obj)
   return total
 end
 
+-- Entities of the given names killed by the force (all surfaces).
+local function killed(force, names)
+  local total = 0
+  for _, surface in pairs(game.surfaces) do
+    local stats = force.get_kill_count_statistics(surface)
+    for _, name in ipairs(names) do total = total + stats.get_input_count(name) end
+  end
+  return total
+end
+
 -- Returns current, target
 local function objective_progress(force, fs, obj)
   local t = obj.type
@@ -265,6 +285,8 @@ local function objective_progress(force, fs, obj)
     local total = 0
     for _, name in ipairs(variant_names(obj.entity)) do total = total + force.get_entity_count(name) end
     return total, obj.count
+  elseif t == "kill" then
+    return killed(force, obj.kind and kind_names(obj) or { obj.entity }), obj.count
   elseif t == "rocket" then
     return force.rockets_launched, obj.count
   elseif t == "visit" then
@@ -302,9 +324,9 @@ local function objective_caption(obj)
     return { key, "[item=" .. obj.item .. "]", prototypes.item[obj.item].localised_name }
   elseif t == "research" then
     return { "quest-book.obj-research", "[technology=" .. obj.tech .. "]", prototypes.technology[obj.tech].localised_name }
-  elseif t == "build" then
+  elseif t == "build" or t == "kill" then
     local entity = build_entity(obj)
-    return { "quest-book.obj-build", "[entity=" .. entity .. "]",
+    return { "quest-book.obj-" .. t, "[entity=" .. entity .. "]",
       obj.kind and { "quest-book-kind." .. obj.kind } or prototypes.entity[entity].localised_name }
   elseif t == "rocket" then
     return { "quest-book.obj-rocket" }
@@ -327,7 +349,7 @@ local function objective_help(obj)
     proto = obj.fluid and prototypes.fluid[obj.fluid] or prototypes.item[obj.item]
     -- rocket parts have no Factoriopedia page of their own; they are made in the silo
     if obj.item == "rocket-part" then proto = prototypes.entity["rocket-silo"] end
-  elseif t == "build" then
+  elseif t == "build" or t == "kill" then
     proto = prototypes.entity[build_entity(obj)]
   elseif t == "rocket" then
     proto = prototypes.entity["rocket-silo"]

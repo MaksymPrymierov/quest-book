@@ -15,6 +15,9 @@
 --                                                 modded replacements); `entity` only provides the icon and
 --                                                 help page. `types = {...}` overrides the prototype types;
 --                                                 the name shown is [quest-book-kind] <kind> in the locale.
+--   kill     {entity=, count=}                    entities of this name killed by the force (all surfaces)
+--            {entity=, kind=, types=, count=}     as for build: any entity of the prototype types counts
+--            control = "<autoplace control>"      skip the quest if Nauvis was generated without it
 --   rocket   {count=}                             rockets launched by the force
 --   visit    {planet=}                            a player of the force stood on the planet
 --   reach    {location=}                          a platform of the force reached the space location
@@ -115,6 +118,13 @@ local quests = {
       { type = "research", tech = "military-2" },
     },
     rewards = { { name = "piercing-rounds-magazine", count = 100 } } },
+  -- Side quest; skipped on maps without enemy bases.
+  { id = "nests", chapter = "defense",
+    objectives = {
+      { type = "kill", entity = "biter-spawner", kind = "spawner", types = { "unit-spawner" }, count = 10, control = "enemy-base" },
+      { type = "kill", entity = "small-worm-turret", kind = "worm", types = { "turret" }, count = 5, control = "enemy-base" },
+    },
+    rewards = { { name = "poison-capsule", count = 10 } } },
 
   -- Chapter 4: black gold
   { id = "oil", chapter = "oil", requires = { "green-science" },
@@ -246,6 +256,11 @@ local quests = {
       { type = "produce", item = "tungsten-plate", count = 200 },
       { type = "produce", item = "metallurgic-science-pack", count = 500 },
     } },
+  { id = "demolisher", chapter = "vulcanus", requires = { "vulcanus-landing" },
+    objectives = {
+      { type = "kill", entity = "small-demolisher", count = 1 },
+    },
+    rewards = { { name = "explosive-rocket", count = 50 } } },
 
   -- Chapter 10: Fulgora
   { id = "fulgora-landing", chapter = "fulgora", requires = { "thrusters" },
