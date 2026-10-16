@@ -75,6 +75,32 @@ local function qualities_from(name)
   return result
 end
 
+-- Technologies of a levelled series ("mining-productivity" -> mining-productivity-1, -2, ...),
+-- sorted by level. A technology named exactly like the series is included too. Cached per series.
+local series_cache = {}
+local function tech_series(series)
+  local names = series_cache[series]
+  if not names then
+    names = {}
+    local pattern = "^" .. series:gsub("%-", "%%-") .. "%-%d+$"
+    for name in pairs(prototypes.technology) do
+      if name == series or name:match(pattern) then names[#names + 1] = name end
+    end
+    table.sort(names, function(a, b) return prototypes.technology[a].level < prototypes.technology[b].level end)
+    series_cache[series] = names
+  end
+  return names
+end
+
+-- The technology of the series that researches the objective's level (icon and help page).
+local function level_tech(obj)
+  local names = tech_series(obj.tech)
+  for _, name in ipairs(names) do
+    if prototypes.technology[name].max_level >= obj.level then return name end
+  end
+  return names[#names]
+end
+
 -- Some mods swap placed buildings for internal copies under another name (seasonal or
 -- powered variants, for example). A copy has the same prototype type and is placed by
 -- the same item, so those are counted together with the original. Cached per entity.
@@ -120,6 +146,9 @@ local function objective_valid(obj)
   elseif t == "build" then
     if obj.kind then return #kind_names(obj) > 0 end
     return prototypes.entity[obj.entity] ~= nil
+  elseif t == "tech_level" then
+    local names = tech_series(obj.tech)
+    return #names > 0 and prototypes.technology[names[#names]].max_level >= obj.level
   elseif t == "quality" then
     if not prototypes.quality[obj.quality] then return false end
     if obj.kind then return #item_kind_names(obj) > 0 end
@@ -305,6 +334,18 @@ local function produced_quality(force, names, quality)
   return total
 end
 
+-- Highest level of the series the force has researched.
+local function researched_level(force, series)
+  local best = 0
+  for _, name in ipairs(tech_series(series)) do
+    local tech = force.technologies[name]
+    -- `level` is the level being researched; a finished technology stays at its last level
+    local level = tech.researched and tech.level or tech.level - 1
+    if level >= tech.prototype.level and level > best then best = level end
+  end
+  return best
+end
+
 -- Entities of the given names killed by the force (all surfaces).
 local function killed(force, names)
   local total = 0
@@ -334,6 +375,8 @@ local function objective_progress(force, fs, obj)
     local total = 0
     for _, name in ipairs(variant_names(obj.entity)) do total = total + force.get_entity_count(name) end
     return total, obj.count
+  elseif t == "tech_level" then
+    return researched_level(force, obj.tech), obj.level
   elseif t == "quality" then
     return produced_quality(force, obj.kind and item_kind_names(obj) or { obj.item }, obj.quality), obj.count
   elseif t == "kill" then
@@ -354,7 +397,7 @@ local function objective_state(force, fs, quest, index)
   local done = fs.objectives[quest.id]
   if fs.completed[quest.id] or (done and done[index]) then
     local obj = quest.objectives[index]
-    local target = obj.count or 1
+    local target = obj.level or obj.count or 1
     return target, target, true
   end
   local current, target = objective_progress(force, fs, quest.objectives[index])
@@ -378,6 +421,9 @@ local function objective_caption(obj)
     return { "quest-book.obj-quality", "[item=" .. item .. ",quality=" .. obj.quality .. "]",
       obj.kind and { "quest-book-kind." .. obj.kind } or prototypes.item[item].localised_name,
       prototypes.quality[obj.quality].localised_name }
+  elseif t == "tech_level" then
+    local tech = level_tech(obj)
+    return { "quest-book.obj-tech-level", "[technology=" .. tech .. "]", prototypes.technology[tech].localised_name, obj.level }
   elseif t == "research" then
     return { "quest-book.obj-research", "[technology=" .. obj.tech .. "]", prototypes.technology[obj.tech].localised_name }
   elseif t == "build" or t == "kill" then
@@ -399,6 +445,8 @@ local function objective_help(obj)
   local t = obj.type
   if t == "research" then
     return "technology", prototypes.technology[obj.tech]
+  elseif t == "tech_level" then
+    return "technology", prototypes.technology[level_tech(obj)]
   end
   local proto
   if t == "produce" or t == "rate" then
@@ -659,7 +707,7 @@ local function build_details(parent, player, fs, quest)
     label.style.width = 300
     label.style.single_line = false
     local bar
-    if (obj.count or 1) > 1 then
+    if (obj.level or obj.count or 1) > 1 then
       bar = row.add { type = "progressbar" }
       bar.style.width = 150
     end

@@ -13,6 +13,8 @@
 --            {item=, kind=, quality=, count=}     any item of prototype type `kind` counts; `item` only
 --                                                 provides the icon. Skipped without the quality mod.
 --   research {tech=}
+--   tech_level {tech=, level=}                    a levelled technology series (tech = name without the
+--                                                 "-N" suffix) researched up to this level
 --   build    {entity=, count=}                    entities currently owned by the force
 --            {entity=, kind=, count=}             any entity of prototype type `kind` counts (higher tiers,
 --                                                 modded replacements); `entity` only provides the icon and
@@ -128,6 +130,12 @@ local quests = {
       { type = "kill", entity = "small-worm-turret", kind = "worm", types = { "turret" }, count = 5, control = "enemy-base" },
     },
     rewards = { { name = "poison-capsule", count = 10 } } },
+  { id = "firepower", chapter = "defense", requires = { "military-science" },
+    objectives = {
+      { type = "tech_level", tech = "physical-projectile-damage", level = 5 },
+      { type = "tech_level", tech = "weapon-shooting-speed", level = 5 },
+    },
+    rewards = { { name = "piercing-rounds-magazine", count = 200 } } },
 
   -- Chapter 4: black gold
   { id = "oil", chapter = "oil", requires = { "green-science" },
@@ -235,7 +243,11 @@ local quests = {
     objectives = {
       { type = "produce", item = "space-science-pack", count = 1000 },
     } },
-  { id = "legendary", chapter = "stars",
+  { id = "mining-productivity", chapter = "stars", requires = { "space-science" },
+    objectives = {
+      { type = "tech_level", tech = "mining-productivity", level = 5 },
+    } },
+  { id = "legendary", chapter = "stars", requires = { "space-science" },
     objectives = {
       { type = "research", tech = "legendary-quality" },
       { type = "quality", item = "quality-module-3", kind = "module", quality = "legendary", count = 10 },

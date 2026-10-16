@@ -2,13 +2,13 @@
 
 **English** · [Українська](#українська)
 
-An in-game story journal for Factorio 2.0. Not sure what to do next? 46 story quests guide you from the crash landing on Nauvis to the edge of the solar system.
+An in-game story journal for Factorio 2.0. Not sure what to do next? 48 story quests guide you from the crash landing on Nauvis to the edge of the solar system.
 
 ![Journal window](docs/screenshots/journal.png)
 
 ## Features
 
-- **13 chapters, 46 quests:** crash landing, automation, defense, oil, trains and robots, every science pack, the rocket. With Space Age: orbit, Vulcanus, Fulgora, Gleba, Aquilo and the edge of the system.
+- **13 chapters, 48 quests:** crash landing, automation, defense, oil, trains and robots, every science pack, the rocket. With Space Age: orbit, Vulcanus, Fulgora, Gleba, Aquilo and the edge of the system.
 - **Branching progression.** Defense runs alongside automation; the inner planets can be visited in any order.
 - **Small rewards** for some quests, claimed by each player individually.
 - **Vanilla and Space Age.** Quests that need content you don't have are skipped automatically.
@@ -80,13 +80,13 @@ MIT
 
 # Українська
 
-Сюжетний журнал прямо в грі для Factorio 2.0. Не знаєте, що робити далі? 46 сюжетних квестів ведуть від аварійної посадки на Наувіс до краю Сонячної системи.
+Сюжетний журнал прямо в грі для Factorio 2.0. Не знаєте, що робити далі? 48 сюжетних квестів ведуть від аварійної посадки на Наувіс до краю Сонячної системи.
 
 ![Вікно журналу](docs/screenshots/journal-uk.png)
 
 ## Можливості
 
-- **13 розділів, 46 квестів:** аварійна посадка, автоматизація, оборона, нафта, потяги й роботи, усі наукові колби, ракета. Зі Space Age: орбіта, Вулкан, Фульгора, Глеба, Аквіло і край системи.
+- **13 розділів, 48 квестів:** аварійна посадка, автоматизація, оборона, нафта, потяги й роботи, усі наукові колби, ракета. Зі Space Age: орбіта, Вулкан, Фульгора, Глеба, Аквіло і край системи.
 - **Розгалуження.** Оборону можна будувати разом з автоматизацією, а внутрішні планети проходити в будь-якому порядку.
 - **Невеликі нагороди** за деякі квести. Кожен гравець забирає свою.
 - **Ваніль і Space Age.** Квести, для яких немає потрібного контенту, пропускаються автоматично.
