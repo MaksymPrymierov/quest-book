@@ -9,6 +9,9 @@
 --   produce  {item=, count=} or {fluid=, count=}  total produced by the force (all surfaces)
 --   rate     {item=, count=} or {fluid=, count=}  produced per minute by the force (all surfaces),
 --                                                 averaged over the last minute
+--   quality  {item=, quality=, count=}            items produced at this quality or better (all surfaces);
+--            {item=, kind=, quality=, count=}     any item of prototype type `kind` counts; `item` only
+--                                                 provides the icon. Skipped without the quality mod.
 --   research {tech=}
 --   build    {entity=, count=}                    entities currently owned by the force
 --            {entity=, kind=, count=}             any entity of prototype type `kind` counts (higher tiers,
@@ -205,6 +208,11 @@ local quests = {
       { type = "build", entity = "beacon", count = 4 },
     },
     rewards = { { name = "speed-module", count = 4 } } },
+  { id = "rare-modules", chapter = "science",
+    objectives = {
+      { type = "research", tech = "quality-module" },
+      { type = "quality", item = "quality-module", kind = "module", quality = "rare", count = 10 },
+    } },
   { id = "nuclear", chapter = "science", requires = { "blue-science", "solar" },
     objectives = {
       { type = "research", tech = "nuclear-power" },
@@ -226,6 +234,11 @@ local quests = {
   { id = "space-science", chapter = "stars",
     objectives = {
       { type = "produce", item = "space-science-pack", count = 1000 },
+    } },
+  { id = "legendary", chapter = "stars",
+    objectives = {
+      { type = "research", tech = "legendary-quality" },
+      { type = "quality", item = "quality-module-3", kind = "module", quality = "legendary", count = 10 },
     } },
 
   -- Space Age. Chapter 8: orbit

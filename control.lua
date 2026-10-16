@@ -43,6 +43,38 @@ local function kind_names(obj)
   return names
 end
 
+-- Names of all item prototypes a `kind` quality objective counts, cached per kind.
+local item_kind_cache = {}
+local function item_kind_names(obj)
+  local names = item_kind_cache[obj.kind]
+  if not names then
+    names = {}
+    for name, proto in pairs(prototypes.get_item_filtered { { filter = "type", type = obj.kind } }) do
+      if not proto.hidden then names[#names + 1] = name end
+    end
+    table.sort(names)
+    item_kind_cache[obj.kind] = names
+  end
+  return names
+end
+
+-- The item whose icon and help page represent a quality objective.
+local function quality_item(obj)
+  if not obj.kind or prototypes.item[obj.item] then return obj.item end
+  return item_kind_names(obj)[1]
+end
+
+-- Qualities at or above the objective's quality (hidden ones such as "quality-unknown" excluded).
+local function qualities_from(name)
+  local level = prototypes.quality[name].level
+  local result = {}
+  for quality_name, quality in pairs(prototypes.quality) do
+    if not quality.hidden and quality.level >= level then result[#result + 1] = quality_name end
+  end
+  table.sort(result)
+  return result
+end
+
 -- Some mods swap placed buildings for internal copies under another name (seasonal or
 -- powered variants, for example). A copy has the same prototype type and is placed by
 -- the same item, so those are counted together with the original. Cached per entity.
@@ -88,6 +120,10 @@ local function objective_valid(obj)
   elseif t == "build" then
     if obj.kind then return #kind_names(obj) > 0 end
     return prototypes.entity[obj.entity] ~= nil
+  elseif t == "quality" then
+    if not prototypes.quality[obj.quality] then return false end
+    if obj.kind then return #item_kind_names(obj) > 0 end
+    return prototypes.item[obj.item] ~= nil
   elseif t == "kill" then
     if obj.kind and #kind_names(obj) == 0 then return false end
     if not obj.kind and not prototypes.entity[obj.entity] then return false end
@@ -256,6 +292,19 @@ local function production_rate(force, obj)
   return total
 end
 
+-- Items of the given names produced by the force at the given quality or better (all surfaces).
+local function produced_quality(force, names, quality)
+  local qualities = qualities_from(quality)
+  local total = 0
+  for _, surface in pairs(game.surfaces) do
+    local stats = force.get_item_production_statistics(surface)
+    for _, name in ipairs(names) do
+      for _, q in ipairs(qualities) do total = total + stats.get_input_count { name = name, quality = q } end
+    end
+  end
+  return total
+end
+
 -- Entities of the given names killed by the force (all surfaces).
 local function killed(force, names)
   local total = 0
@@ -285,6 +334,8 @@ local function objective_progress(force, fs, obj)
     local total = 0
     for _, name in ipairs(variant_names(obj.entity)) do total = total + force.get_entity_count(name) end
     return total, obj.count
+  elseif t == "quality" then
+    return produced_quality(force, obj.kind and item_kind_names(obj) or { obj.item }, obj.quality), obj.count
   elseif t == "kill" then
     return killed(force, obj.kind and kind_names(obj) or { obj.entity }), obj.count
   elseif t == "rocket" then
@@ -322,6 +373,11 @@ local function objective_caption(obj)
       return { key, "[fluid=" .. obj.fluid .. "]", prototypes.fluid[obj.fluid].localised_name }
     end
     return { key, "[item=" .. obj.item .. "]", prototypes.item[obj.item].localised_name }
+  elseif t == "quality" then
+    local item = quality_item(obj)
+    return { "quest-book.obj-quality", "[item=" .. item .. ",quality=" .. obj.quality .. "]",
+      obj.kind and { "quest-book-kind." .. obj.kind } or prototypes.item[item].localised_name,
+      prototypes.quality[obj.quality].localised_name }
   elseif t == "research" then
     return { "quest-book.obj-research", "[technology=" .. obj.tech .. "]", prototypes.technology[obj.tech].localised_name }
   elseif t == "build" or t == "kill" then
@@ -349,6 +405,8 @@ local function objective_help(obj)
     proto = obj.fluid and prototypes.fluid[obj.fluid] or prototypes.item[obj.item]
     -- rocket parts have no Factoriopedia page of their own; they are made in the silo
     if obj.item == "rocket-part" then proto = prototypes.entity["rocket-silo"] end
+  elseif t == "quality" then
+    proto = prototypes.item[quality_item(obj)]
   elseif t == "build" or t == "kill" then
     proto = prototypes.entity[build_entity(obj)]
   elseif t == "rocket" then
