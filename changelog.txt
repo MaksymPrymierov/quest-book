@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.0
+Date: 2026-10-17
+  Features:
+    - New objective types: production rate per minute, destroying enemies, items of a given quality or better, and technology levels.
+    - Added 11 side quests: steady production of science packs and circuits, clearing biter spawners and worms, defeating a small demolisher on Vulcanus, rare and legendary modules, weapon upgrades and mining productivity.
+    - Side quests never block the main story. Quests about enemies are skipped on maps without enemy bases, and quality quests are skipped without the Quality mod.
+  Locale:
+    - Added texts for the new quests in English, Ukrainian and German.
+---------------------------------------------------------------------------------------------------
 Version: 0.1.6
 Date: 2026-10-11
   Features:
